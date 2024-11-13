@@ -511,6 +511,17 @@ ASN Notation: asplain
 
 #### Router BGP Peer Groups
 
+##### EVPN-OVERLAY-CORE
+
+| Settings | Value |
+| -------- | ----- |
+| Address Family | evpn |
+| Source | Loopback0 |
+| BFD | True |
+| Ebgp multihop | 15 |
+| Send community | all |
+| Maximum routes | 0 (no limit) |
+
 ##### EVPN-OVERLAY-PEERS
 
 | Settings | Value |
@@ -546,6 +557,7 @@ ASN Notation: asplain
 | -------- | --------- | --- | -------- | -------------- | -------------- | ---------- | --- | --------------------- | ---------------------- | ------- | ------------ |
 | 10.250.1.1 | 65100 | default | - | Inherited from peer group EVPN-OVERLAY-PEERS | Inherited from peer group EVPN-OVERLAY-PEERS | - | Inherited from peer group EVPN-OVERLAY-PEERS | - | - | - | - |
 | 10.250.1.2 | 65100 | default | - | Inherited from peer group EVPN-OVERLAY-PEERS | Inherited from peer group EVPN-OVERLAY-PEERS | - | Inherited from peer group EVPN-OVERLAY-PEERS | - | - | - | - |
+| 10.250.2.8 | 65203 | default | - | Inherited from peer group EVPN-OVERLAY-CORE | Inherited from peer group EVPN-OVERLAY-CORE | - | Inherited from peer group EVPN-OVERLAY-CORE | - | - | - | - |
 | 10.252.1.8 | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | default | - | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | - | - | - | - | - | - |
 | 172.16.1.20 | 65100 | default | - | Inherited from peer group IPv4-UNDERLAY-PEERS | Inherited from peer group IPv4-UNDERLAY-PEERS | - | - | - | - | - | - |
 | 172.16.1.22 | 65100 | default | - | Inherited from peer group IPv4-UNDERLAY-PEERS | Inherited from peer group IPv4-UNDERLAY-PEERS | - | - | - | - | - | - |
@@ -556,7 +568,16 @@ ASN Notation: asplain
 
 | Peer Group | Activate | Encapsulation |
 | ---------- | -------- | ------------- |
+| EVPN-OVERLAY-CORE | True | default |
 | EVPN-OVERLAY-PEERS | True | default |
+
+##### EVPN DCI Gateway Summary
+
+| Settings | Value |
+| -------- | ----- |
+| Remote Domain Peer Groups | EVPN-OVERLAY-CORE |
+| L3 Gateway Configured | True |
+| L3 Gateway Inter-domain | True |
 
 #### Router BGP Device Configuration
 
@@ -566,6 +587,12 @@ router bgp 65103
    router-id 10.250.1.8
    maximum-paths 4 ecmp 4
    no bgp default ipv4-unicast
+   neighbor EVPN-OVERLAY-CORE peer group
+   neighbor EVPN-OVERLAY-CORE update-source Loopback0
+   neighbor EVPN-OVERLAY-CORE bfd
+   neighbor EVPN-OVERLAY-CORE ebgp-multihop 15
+   neighbor EVPN-OVERLAY-CORE send-community
+   neighbor EVPN-OVERLAY-CORE maximum-routes 0
    neighbor EVPN-OVERLAY-PEERS peer group
    neighbor EVPN-OVERLAY-PEERS update-source Loopback0
    neighbor EVPN-OVERLAY-PEERS bfd
@@ -591,6 +618,9 @@ router bgp 65103
    neighbor 10.250.1.2 peer group EVPN-OVERLAY-PEERS
    neighbor 10.250.1.2 remote-as 65100
    neighbor 10.250.1.2 description s1-spine2
+   neighbor 10.250.2.8 peer group EVPN-OVERLAY-CORE
+   neighbor 10.250.2.8 remote-as 65203
+   neighbor 10.250.2.8 description s2-brdr2
    neighbor 10.252.1.8 peer group MLAG-IPv4-UNDERLAY-PEER
    neighbor 10.252.1.8 description s1-brdr1
    neighbor 172.16.1.20 peer group IPv4-UNDERLAY-PEERS
@@ -602,9 +632,13 @@ router bgp 65103
    redistribute connected route-map RM-CONN-2-BGP
    !
    address-family evpn
+      neighbor EVPN-OVERLAY-CORE activate
+      neighbor EVPN-OVERLAY-CORE domain remote
       neighbor EVPN-OVERLAY-PEERS activate
+      neighbor default next-hop-self received-evpn-routes route-type ip-prefix inter-domain
    !
    address-family ipv4
+      no neighbor EVPN-OVERLAY-CORE activate
       no neighbor EVPN-OVERLAY-PEERS activate
       neighbor IPv4-UNDERLAY-PEERS activate
       neighbor MLAG-IPv4-UNDERLAY-PEER activate
