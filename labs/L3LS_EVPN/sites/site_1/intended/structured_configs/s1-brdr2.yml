@@ -79,6 +79,11 @@ router_bgp:
     peer: s2-brdr2
     description: s2-brdr2
     remote_as: '65203'
+  - ip_address: 172.16.255.3
+    remote_as: '65203'
+    peer: s2-brdr2
+    description: s2-brdr2
+    peer_group: IPv4-UNDERLAY-PEERS
   redistribute_routes:
   - source_protocol: connected
     route_map: RM-CONN-2-BGP
@@ -203,6 +208,15 @@ ethernet_interfaces:
   mtu: 1500
   type: routed
   ip_address: 172.16.1.23/31
+- name: Ethernet5
+  peer: s2-brdr2
+  peer_interface: Ethernet5
+  peer_type: other
+  description: P2P_LINK_TO_s2-brdr2_Ethernet5
+  type: routed
+  shutdown: false
+  mtu: 1500
+  ip_address: 172.16.255.2/31
 mlag_configuration:
   domain_id: S1_BRDR
   local_interface: Vlan4094
